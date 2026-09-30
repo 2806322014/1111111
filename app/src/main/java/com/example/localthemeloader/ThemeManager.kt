@@ -14,6 +14,8 @@ data class ThemePackage(
     val name: String,
     val author: String,
     val root: File,
+    val sourceZip: File?,
+    val previewFile: File?,
     val homeWallpaper: File?,
     val lockWallpaper: File?,
     val icons: Map<String, File>
@@ -23,23 +25,60 @@ class ThemeManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("theme_loader", Context.MODE_PRIVATE)
     private val themesDir = File(context.filesDir, "themes").apply { mkdirs() }
 
+    fun listThemes(): List<ThemePackage> =
+        themesDir.listFiles()
+            ?.filter { it.isDirectory }
+            ?.mapNotNull { readTheme(it) }
+            ?.sortedByDescending { it.root.lastModified() }
+            ?: emptyList()
+
     fun currentTheme(): ThemePackage? {
         val id = prefs.getString("current_theme", null) ?: return null
+        return themeById(id)
+    }
+
+    fun themeById(id: String): ThemePackage? {
         val root = File(themesDir, id)
-        if (!root.exists()) return null
+        if (!root.exists() || !root.isDirectory) return null
         return readTheme(root)
+    }
+
+    fun selectTheme(id: String): ThemePackage? {
+        val theme = themeById(id) ?: return null
+        prefs.edit().putString("current_theme", id).apply()
+        return theme
+    }
+
+    fun deleteTheme(id: String): Boolean {
+        val root = File(themesDir, id)
+        if (!root.exists()) return false
+        val deleted = root.deleteRecursively()
+        if (deleted && prefs.getString("current_theme", null) == id) {
+            val fallback = listThemes().firstOrNull()
+            prefs.edit().putString("current_theme", fallback?.id).apply()
+        }
+        return deleted
     }
 
     fun importTheme(uri: Uri): ThemePackage {
         val id = UUID.randomUUID().toString()
         val target = File(themesDir, id).apply { mkdirs() }
+        val savedZip = File(target, "package.zip")
 
         try {
             context.contentResolver.openInputStream(uri).use { input ->
                 requireNotNull(input) { "无法读取主题包" }
+                savedZip.outputStream().use { output -> input.copyTo(output) }
+            }
+
+            FileInputStream(savedZip).use { input ->
                 ZipInputStream(input).use { zip ->
                     while (true) {
                         val entry = zip.nextEntry ?: break
+                        if (entry.name == "package.zip") {
+                            zip.closeEntry()
+                            continue
+                        }
                         val outFile = File(target, entry.name)
                         val safeRoot = target.canonicalPath + File.separator
                         require(outFile.canonicalPath.startsWith(safeRoot)) { "主题包包含非法路径" }
@@ -53,7 +92,9 @@ class ThemeManager(private val context: Context) {
                     }
                 }
             }
+
             val theme = readTheme(target) ?: error("主题包缺少 theme.json")
+            target.setLastModified(System.currentTimeMillis())
             prefs.edit().putString("current_theme", id).apply()
             return theme
         } catch (e: Exception) {
@@ -65,11 +106,23 @@ class ThemeManager(private val context: Context) {
     private fun readTheme(root: File): ThemePackage? {
         val meta = File(root, "theme.json")
         if (!meta.exists()) return null
+
         val json = JSONObject(meta.readText())
         val name = json.optString("name", "未命名主题")
         val author = json.optString("author", "")
         val home = resolveSafe(root, json.optString("home_wallpaper", "wallpapers/home.png"))
         val lock = resolveSafe(root, json.optString("lock_wallpaper", "wallpapers/lock.png"))
+
+        val explicitPreview = resolveSafe(root, json.optString("preview", ""))
+        val preview = listOfNotNull(
+            explicitPreview,
+            File(root, "preview.png"),
+            File(root, "preview.jpg"),
+            File(root, "previews/home.png"),
+            File(root, "previews/lock.png"),
+            home,
+            lock
+        ).firstOrNull { it.exists() && it.isFile }
 
         val icons = mutableMapOf<String, File>()
         val obj = json.optJSONObject("icons")
@@ -83,7 +136,8 @@ class ThemeManager(private val context: Context) {
         }
 
         val iconsDir = File(root, "icons")
-        iconsDir.listFiles()?.filter { it.isFile && it.extension.lowercase() in setOf("png", "jpg", "jpeg", "webp") }
+        iconsDir.listFiles()
+            ?.filter { it.isFile && it.extension.lowercase() in setOf("png", "jpg", "jpeg", "webp") }
             ?.forEach { f -> icons.putIfAbsent(f.nameWithoutExtension, f) }
 
         return ThemePackage(
@@ -91,6 +145,8 @@ class ThemeManager(private val context: Context) {
             name = name,
             author = author,
             root = root,
+            sourceZip = File(root, "package.zip").takeIf { it.exists() },
+            previewFile = preview,
             homeWallpaper = home?.takeIf { it.exists() },
             lockWallpaper = lock?.takeIf { it.exists() },
             icons = icons
@@ -124,6 +180,7 @@ class ThemeManager(private val context: Context) {
             }
             result += "锁屏壁纸已应用"
         }
+
         if (result.isEmpty()) result += "主题包里没有可应用的壁纸"
         return result
     }
