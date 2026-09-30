@@ -163,7 +163,7 @@ class MainActivity : Activity() {
         if(requestCode==1001 && resultCode==RESULT_OK) data?.data?.let { importUri(it) }
         if(requestCode==1002 && pendingRole) {
             pendingRole=false
-            if(isHome()) { toast("主题图标已启用"); startActivity(Intent(this,LauncherActivity::class.java)) }
+            if(isHome()) toast("主题图标已启用，按主屏幕键即可查看")
             else AlertDialog.Builder(this).setTitle("壁纸结果已保留").setMessage("你暂未选择拾光桌面。主题图标可在下方“桌面”中预览，稍后也能在“我的”中设为默认桌面。")
                 .setPositiveButton("知道了",null).show()
         }
