@@ -11,8 +11,9 @@ android {
         applicationId = "com.example.localthemeloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 100
+        versionName = "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -22,4 +23,27 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    signingConfigs {
+        create("release") {
+            val signingPath = System.getenv("SHIGUANG_KEYSTORE")
+            if (!signingPath.isNullOrBlank()) {
+                storeFile = file(signingPath)
+                storePassword = System.getenv("SHIGUANG_STORE_PASSWORD")
+                keyAlias = "shiguang"
+                keyPassword = System.getenv("SHIGUANG_KEY_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isDebuggable = false
+        }
+    }
+}
+
+dependencies {
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
