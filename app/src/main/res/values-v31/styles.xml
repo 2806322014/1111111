@@ -1,0 +1,1 @@
+<resources><style name="LaunchTheme" parent="AppTheme"><item name="android:windowSplashScreenBackground">#F7F6F0</item><item name="android:windowSplashScreenAnimatedIcon">@drawable/brand_icon</item><item name="android:windowSplashScreenIconBackgroundColor">#F6F3E8</item></style></resources>

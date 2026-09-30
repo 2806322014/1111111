@@ -1,33 +1,65 @@
-name: Build Android APK
-
+name: Build and verify Shiguang Theme
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
-
+  pull_request:
+permissions:
+  contents: read
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-
-      - name: Set up Gradle 8.9
-        uses: gradle/actions/setup-gradle@v4
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-
-      - name: Build debug APK
-        run: gradle assembleDebug
-
-      - name: Upload APK
+      - name: Compile and check
+        run: gradle assembleDebug lintDebug --console=plain
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect
+          script: gradle connectedDebugAndroidTest --console=plain
+      - name: Upload verification reports and test APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LocalThemeLoader-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ShiguangTheme-verification
+          path: |
+            app/build/reports/
+            app/build/outputs/androidTest-results/
+            app/build/outputs/apk/debug/app-debug.apk
+      - name: Build signed release when signing secrets are configured
+        env:
+          SIGNING_B64: ${{ secrets.SHIGUANG_KEYSTORE_B64 }}
+          SHIGUANG_STORE_PASSWORD: ${{ secrets.SHIGUANG_STORE_PASSWORD }}
+          SHIGUANG_KEY_PASSWORD: ${{ secrets.SHIGUANG_KEY_PASSWORD }}
+        run: |
+          if [ -n "$SIGNING_B64" ]; then
+            printf '%s' "$SIGNING_B64" | base64 --decode > "$RUNNER_TEMP/shiguang-release.jks"
+            export SHIGUANG_KEYSTORE="$RUNNER_TEMP/shiguang-release.jks"
+            gradle assembleRelease lintRelease --console=plain
+          else
+            echo 'Release signing uses the owner-held private key; CI verified the test build.'
+          fi
+      - name: Upload signed release
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShiguangTheme-release
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: ignore
