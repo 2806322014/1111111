@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dp"
+    android:background="#FFFFFFFF">
+
+    <ImageView
+        android:id="@+id/themePreview"
+        android:layout_width="match_parent"
+        android:layout_height="92dp"
+        android:background="#F2EAE7"
+        android:contentDescription="主题预览"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/themeName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/textPrimary"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/themeAuthor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/textSecondary"
+        android:textSize="11sp" />
+</LinearLayout>
