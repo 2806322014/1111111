@@ -24,10 +24,10 @@ open class ThemeScreenActivity : Activity() {
             Ui.add(box, Ui.button(this, label, true) { if (!busy) action() }); Ui.add(root, box) }
         return content
     }
-    protected fun image(file: File?, label: String, height: Int, crop: Boolean = false) = ImageView(this).apply {
+    protected fun image(file: File?, label: String, height: Int, crop: Boolean = false, maxEdge: Int = 1080) = ImageView(this).apply {
         scaleType = if (crop) ImageView.ScaleType.CENTER_CROP else ImageView.ScaleType.FIT_CENTER
         contentDescription = label; background = Ui.shape(Ui.soft, Ui.dp(context, 22)); clipToOutline = true
-        setImageBitmap(ThemeFiles.decode(file, 1080)); layoutParams = LinearLayout.LayoutParams(-1, Ui.dp(context, height))
+        setImageBitmap(ThemeFiles.decode(file, maxEdge)); layoutParams = LinearLayout.LayoutParams(-1, Ui.dp(context, height))
     }
     protected fun toast(message: String) { Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
     protected fun error(message: String) { AlertDialog.Builder(this).setTitle("暂未完成").setMessage(message).setPositiveButton("知道了", null).show() }

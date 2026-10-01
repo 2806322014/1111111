@@ -150,6 +150,58 @@ class ThemeV2Test {
         instrumentation.runOnMainSync { operation.detach(); operation.attach { r, _ -> received = r; done.countDown() } }
         release.countDown(); assertTrue(done.await(5, TimeUnit.SECONDS)); assertFalse(oldCalled); assertTrue(received!!.state.homeWallpaperApplied)
     }
+    @Test fun freshLibraryHasNoBundledThemeAndApplyIsDisabled() {
+        assertTrue("A new installation must start empty", repository.list().isEmpty())
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val apply = activity.window.decorView.findViewWithTag<android.view.View>("apply_theme")
+                assertNotNull(apply); assertFalse(apply.isEnabled)
+                assertNull(activity.window.decorView.findViewWithTag<android.view.View>("imported_preview"))
+            }
+            scenario.recreate()
+            scenario.onActivity { activity -> assertFalse(activity.window.decorView.findViewWithTag<android.view.View>("apply_theme").isEnabled) }
+            assertTrue(repository.list().isEmpty())
+        }
+    }
+    @Test fun searchSelectionAndApplyChoicesSurviveRecreation() {
+        val otherId = "verification_search_other"
+        try {
+            import(); import(archive { it.put("id", otherId).put("name", "另一主题").put("author", "另一作者") })
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.window.decorView.findViewWithTag<android.widget.EditText>("theme_search").setText("功能验收")
+                    assertNotNull(activity.window.decorView.findViewWithTag<android.view.View>("theme_$id"))
+                    assertNull(activity.window.decorView.findViewWithTag<android.view.View>("theme_$otherId"))
+                    activity.window.decorView.findViewWithTag<android.view.View>("theme_$id").performClick()
+                    activity.window.decorView.findViewWithTag<android.view.View>("select_wallpapers").performClick()
+                }
+                scenario.recreate()
+                scenario.onActivity { activity ->
+                    assertEquals("功能验收", activity.window.decorView.findViewWithTag<android.widget.EditText>("theme_search").text.toString())
+                    assertTrue(activity.window.decorView.findViewWithTag<android.view.View>("imported_preview").contentDescription.toString().contains("验证主题"))
+                    val info = activity.window.decorView.findViewWithTag<android.view.View>("select_wallpapers").createAccessibilityNodeInfo()
+                    assertFalse(info.isChecked)
+                }
+            }
+        } finally { repository.delete(otherId) }
+    }
+    @Test fun mainOneClickAppliesImportedWallpaperAndReachesResult() {
+        import(); val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val monitor = instrumentation.addMonitor(ThemeResultActivity::class.java.name, null, false)
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                scenario.onActivity { activity ->
+                    activity.window.decorView.findViewWithTag<android.view.View>("apply_theme").performClick()
+                    activity.recreate()
+                }
+                val result = instrumentation.waitForMonitorWithTimeout(monitor, 15000)
+                assertNotNull("Main apply button must reach the result after recreation", result)
+                val saved = ThemeApplyStateRepository(context).get(id)
+                assertTrue(saved!!.homeWallpaperApplied); assertTrue(saved.lockWallpaperApplied)
+                instrumentation.runOnMainSync { result?.finish() }
+            }
+        } finally { instrumentation.removeMonitor(monitor) }
+    }
     @Test fun oneApplyClickReachesResultDespiteWallpaperConfigurationChanges() {
         val t = import(); val instrumentation = InstrumentationRegistry.getInstrumentation()
         val monitor = instrumentation.addMonitor(ThemeResultActivity::class.java.name, null, false)

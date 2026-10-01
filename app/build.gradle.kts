@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.localthemeloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 200
-        versionName = "2.0.0"
+        versionCode = 201
+        versionName = "2.0.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -23,6 +23,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    buildFeatures { buildConfig = true }
     signingConfigs {
         create("release") {
             val signingPath = System.getenv("SHIGUANG_KEYSTORE")

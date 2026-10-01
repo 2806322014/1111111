@@ -28,8 +28,8 @@ try {
     try {
         & "$Toolchain\gradle\gradle-8.9\bin\gradle.bat" assembleRelease lintRelease --console=plain
         if ($LASTEXITCODE -ne 0) { throw 'Release build failed.' }
-        Copy-Item -LiteralPath 'app\build\outputs\apk\release\app-release.apk' -Destination "$Output\拾光主题-V2.0.apk"
-        & "$env:ANDROID_HOME\build-tools\35.0.0\apksigner.bat" verify --verbose --print-certs "$Output\拾光主题-V2.0.apk"
+        Copy-Item -LiteralPath 'app\build\outputs\apk\release\app-release.apk' -Destination "$Output\拾光主题-V2.0.1.apk"
+        & "$env:ANDROID_HOME\build-tools\35.0.0\apksigner.bat" verify --verbose --print-certs "$Output\拾光主题-V2.0.1.apk"
         if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
     } finally { Pop-Location }
 } finally {

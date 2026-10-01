@@ -1,11 +1,12 @@
-# 拾光主题 V2.0
+# 拾光主题 V2.0.1
 
-Android 10+ 本地手机主题美化工具，在 V1 工程上升级。导入 .ltheme → 完整预览 → 选择壁纸/组件 → 查看实际结果 → 按手机桌面的确认步骤添加组件或图标快捷方式。
+Android 10+ 本地手机主题美化工具，在原工程上升级。首次安装主题库为空，APK 不附带主题包、主题壁纸或主题预览图。导入 .ltheme → 在首页预览、选择内容并直接应用 → 查看实际结果 → 按手机桌面的确认步骤添加组件或图标快捷方式。
 
-正式应用身份仍为 com.example.localthemeloader，版本 2.0.0 / 200，compileSdk/targetSdk 35。无 HOME 入口，不申请默认桌面。Debug 使用独立安装身份，避免测试包覆盖正式用户收藏。
+正式应用身份仍为 com.example.localthemeloader，版本 2.0.1 / 201，compileSdk/targetSdk 35。无 HOME 入口，不申请默认桌面。Debug 使用独立安装身份，避免测试包覆盖正式用户收藏。
 
 ## 主要行为
 
+- 浅蓝白、圆角卡片与蓝紫渐变界面；搜索名称/作者、选择主题、排序、应用记录、首页/主题/我的导航均可操作。没有导入主题时应用按钮不可用；升级安装保留用户自己导入的收藏。
 - 锁屏、桌面壁纸独立设置与反馈，只使用 WallpaperManager 的公开能力。
 - 时钟、日期、照片、文案四类组件，分别提供 2×2 / 4×2 入口，可调整尺寸。TextClock 由桌面实时显示时间，无联网/常驻服务。
 - 支持 requestPinAppWidget 的桌面显示系统确认；其他桌面可长按桌面 → 小组件 → 拾光主题，选择收藏的主题。
@@ -29,11 +30,13 @@ JDK 21、Gradle 8.9、Android SDK 35。首次可运行 tools/bootstrap.py 准备
 ./tools/build-release.ps1
 ```
 
-签名密钥保存在用户的 .codex/signing/shiguang-theme 私有目录，密码由 Windows 用户加密保存，不进入工程、日志或 Git。同一密钥允许 V1→V2 覆盖安装。最终签名包输出 dist/拾光主题-V2.0.apk，V1 包保留。
+签名密钥保存在用户的 .codex/signing/shiguang-theme 私有目录，密码由 Windows 用户加密保存，不进入工程、日志或 Git。同一密钥允许覆盖安装并保留收藏。最终签名包输出 dist/拾光主题-V2.0.1.apk，旧包保留。tools/build-rollback.ps1 可从已验证的 V2.0 提交生成同安装版本号的回退包。
 
 GitHub Actions 验证编译/检查及 Android 15 仪器测试。只有配置所有者签名 Secrets 时才在 CI 输出签名 release；本地签名包为交付安装包。
 
-主题协议见 docs/theme-format.md；开发前审查见 docs/V2-development-audit.md；最终验证、文件清单和回退说明见 docs/V2-verification.md。
+主题协议见 docs/theme-format.md；开发前审查见 docs/V2-development-audit.md；V2.0 的历史验收见 docs/V2-verification.md，本版验收见 docs/V2.0.1-verification.md；参考图与原生截图比较见 design-qa.md。
+
+界面图标采用 Google Material Icons，Apache-2.0，原始路径数据保持不变；许可随 APK 保存，并可在设置页查看。来源：https://github.com/google/material-design-icons 。
 
 ## 边界
 
