@@ -11,8 +11,8 @@ android {
         applicationId = "com.example.localthemeloader"
         minSdk = 29
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 200
+        versionName = "2.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -35,6 +35,7 @@ android {
         }
     }
     buildTypes {
+        getByName("debug") { applicationIdSuffix = ".debug" }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
