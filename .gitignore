@@ -1,0 +1,11 @@
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.jks
+*.keystore
+signing.properties
+tools/__pycache__/
+output/imagegen/
+verification/
+dist/
